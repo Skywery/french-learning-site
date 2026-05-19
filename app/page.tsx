@@ -58,7 +58,8 @@ export default function Home() {
               <div className="flex-grow"></div>
 
               <nav className="space-y-1 border-t border-gray-100 pt-4 mt-4">
-                <a href="#" className="block">
+                {/* 兔子洞设置 - 已改为可点击链接 */}
+                <a href="/settings" className="block">
                   <div className="px-3 py-2 rounded-lg text-sm cursor-pointer transition text-gray-700 hover:bg-gray-100">
                     ⚙️ 兔子洞设置
                   </div>
@@ -113,7 +114,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 今日学习时长卡片（集成计时器） */}
+            {/* 今日学习时长卡片 */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex justify-between items-center">
                 <div>

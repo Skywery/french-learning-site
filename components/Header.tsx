@@ -1,3 +1,4 @@
+// components/Header.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,14 +8,43 @@ import AuthModal from './AuthModal';
 
 export default function Header() {
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<{ username: string | null }>({ username: null });
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  // 获取当前用户及其资料
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      if (user) {
+        // 从 user_profiles 表获取昵称
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+        if (!error && data) {
+          setProfile({ username: data.username });
+        }
+      }
+    };
+    getUser();
+
+    // 监听认证状态变化
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('username')
+          .eq('id', session.user.id)
+          .single();
+        if (!error && data) {
+          setProfile({ username: data.username });
+        }
+      } else {
+        setProfile({ username: null });
+      }
     });
     return () => {
       listener?.subscription.unsubscribe();
@@ -24,6 +54,9 @@ export default function Header() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
+
+  // 显示文本：优先显示昵称，没有昵称则显示邮箱
+  const displayName = profile.username || user?.email || '用户';
 
   return (
     <>
@@ -41,13 +74,19 @@ export default function Header() {
               <button className="text-gray-600 hover:text-purple-600 text-sm flex items-center gap-1">💬 消息</button>
               {user ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">{user.email}</span>
-                  <button onClick={handleLogout} className="text-sm text-red-500 hover:text-red-700">退出</button>
+                  <span className="text-sm text-gray-600">{displayName}</span>
+                  <button onClick={handleLogout} className="text-sm text-red-500 hover:text-red-700">
+                    退出
+                  </button>
                 </div>
               ) : (
                 <>
-                  <button onClick={() => setShowAuthModal(true)} className="text-gray-600 hover:text-purple-600 text-sm">登录</button>
-                  <button onClick={() => setShowAuthModal(true)} className="bg-purple-600 text-white px-4 py-1.5 rounded-lg text-sm">注册</button>
+                  <button onClick={() => setShowAuthModal(true)} className="text-gray-600 hover:text-purple-600 text-sm">
+                    登录
+                  </button>
+                  <button onClick={() => setShowAuthModal(true)} className="bg-purple-600 text-white px-4 py-1.5 rounded-lg text-sm">
+                    注册
+                  </button>
                 </>
               )}
             </div>
